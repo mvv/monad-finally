@@ -55,7 +55,7 @@ import Prelude hiding (catch)
 import Prelude hiding (ioError)
 #endif
 import Data.Monoid (Monoid)
-import Control.Applicative (Applicative)
+import Control.Applicative (Applicative, (<$>))
 import Control.Monad (join, liftM)
 import Control.Monad.Base
 import Control.Monad.Trans.Class
