@@ -17,7 +17,8 @@ module Control.Monad.Finally
   ) where
 
 import Data.Functor.Identity
-import Control.Applicative (Applicative(..), (<$>))
+import Data.Monoid (Monoid(..))
+import Control.Applicative (Applicative(..), (<$>), (<$))
 import Control.Monad (join, mapM, forM)
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Error
