@@ -16,10 +16,14 @@ module Control.Monad.Finally
   , bracketOnEscape
   ) where
 
+#if !MIN_VERSION_base(4,8,0)
+import Prelude hiding (mapM, forM)
+#endif
 import Data.Functor.Identity
 import Data.Monoid (Monoid(..))
+import Data.Traversable (mapM, forM)
 import Control.Applicative (Applicative(..), (<$>), (<$))
-import Control.Monad (join, mapM, forM)
+import Control.Monad (join)
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Error
 import Control.Monad.Trans.Except
