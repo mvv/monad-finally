@@ -5,6 +5,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ImpredicativeTypes #-}
@@ -19,12 +20,14 @@
 module Control.Monad.Exception
   (
   -- * Throwing exceptions
-    exception
+    MonadThrow
+  , exception
   , throw
   , throwIO
   , ioError
   , throwTo
   -- * Catching exceptions
+  , MonadCatch
   , catch
   , handle
   , catchJust
@@ -45,6 +48,8 @@ module Control.Monad.Exception
   , uninterruptibleMask_
   , interruptible
   , allowInterrupt
+  -- * Re-exports
+  , module Control.Monad.Abort.Class
   , module Control.Monad.Finally
   , module Control.Exception
   ) where
@@ -92,6 +97,9 @@ import GHC.Base (maskAsyncExceptions#, maskUninterruptible#,
                  unmaskAsyncExceptions#)
 import GHC.IO (IO(..))
 
+-- | An alias for 'MonadAbort' 'SomeException' /μ/.
+type MonadThrow μ = MonadAbort SomeException μ
+
 -- | Throw an exception from pure code.
 exception ∷ Exception e ⇒ e → α
 exception = E.throw
@@ -99,7 +107,7 @@ exception = E.throw
 
 -- | Throw an exception from monadic code. An alias for
 -- @'abort' . 'toException'@.
-throw ∷ (MonadAbort SomeException μ, Exception e) ⇒ e → μ α
+throw ∷ (MonadThrow μ, Exception e) ⇒ e → μ α
 throw = abort . toException
 {-# INLINE throw #-}
 
@@ -118,18 +126,21 @@ throwTo ∷ (MonadBase IO μ, Exception e) ⇒ ThreadId → e → μ ()
 throwTo = fmap liftBase . E.throwTo
 {-# INLINE throwTo #-}
 
+-- | An alias for 'MonadRecover' 'SomeException' /μ/.
+type MonadCatch μ = MonadRecover SomeException μ
+
 -- | Recover from the specified type of exceptions.
-catch ∷ (MonadRecover SomeException μ, Exception e) ⇒ μ α → (e → μ α) → μ α
+catch ∷ (MonadCatch μ, Exception e) ⇒ μ α → (e → μ α) → μ α
 catch m h = recover m $ \e → maybe (throw e) h (fromException e)
 {-# INLINE catch #-}
 
 -- | An alias for @'flip' 'catch'@.
-handle ∷ (MonadRecover SomeException μ, Exception e) ⇒ (e → μ α) → μ α → μ α
+handle ∷ (MonadCatch μ, Exception e) ⇒ (e → μ α) → μ α → μ α
 handle = flip catch
 {-# INLINE handle #-}
 
 -- | Recover from exceptions that satisfy the provided predicate.
-catchJust ∷ (MonadRecover SomeException μ, Exception e)
+catchJust ∷ (MonadCatch μ, Exception e)
           ⇒ (e → Maybe β) -- ^ Exception predicate
           → μ α           -- ^ Main computation
           → (β → μ α)     -- ^ Exception handler
@@ -138,7 +149,7 @@ catchJust f m h = catch m $ \e → maybe (throw e) h $ f e
 {-# INLINE catchJust #-}
 
 -- | An alias for @'flip' . 'catchJust'@.
-handleJust ∷ (MonadRecover SomeException μ, Exception e)
+handleJust ∷ (MonadCatch μ, Exception e)
            ⇒ (e → Maybe β) → (β → μ α) → μ α → μ α
 handleJust = flip . catchJust
 {-# INLINE handleJust #-}
@@ -152,25 +163,25 @@ instance Functor μ ⇒ Functor (Handler μ) where
 
 -- | Recover from exceptions by sequentually trying to apply the provided
 -- handlers.
-catches ∷ MonadRecover SomeException μ ⇒ μ α → [Handler μ α] → μ α
+catches ∷ MonadCatch μ ⇒ μ α → [Handler μ α] → μ α
 catches m = recover m . hl
   where hl [] e = abort e
         hl (Handler h : hs) e = maybe (hl hs e) h $ fromException e
 
 -- | An alias for @'flip' 'catches'@.
-handles ∷ MonadRecover SomeException μ ⇒ [Handler μ α] → μ α → μ α
+handles ∷ MonadCatch μ ⇒ [Handler μ α] → μ α → μ α
 handles = flip catches
 {-# INLINE handles #-}
 
 -- | Recover from exceptions of the spesified type, wrapping them into
 -- 'Left'.
-try ∷ (MonadRecover SomeException μ, Exception e) ⇒ μ α → μ (Either e α)
+try ∷ (MonadCatch μ, Exception e) ⇒ μ α → μ (Either e α)
 try m = catch (Right <$> m) (return . Left)
 {-# INLINE try #-}
 
 -- | Recover from exceptions that satisfy the provided predicate, wrapping
 -- them into 'Left'.
-tryJust ∷ (MonadRecover SomeException μ, Exception e)
+tryJust ∷ (MonadCatch μ, Exception e)
         ⇒ (e → Maybe β) -- ^ Exception predicate
         → μ α           -- ^ Main compuration
         → μ (Either β α)
