@@ -1,5 +1,5 @@
 Name: monad-finally
-Version: 0.1.1
+Version: 0.1.2
 Category: Control
 Stability: experimental
 Synopsis: Guard monadic computations with cleanup actions
