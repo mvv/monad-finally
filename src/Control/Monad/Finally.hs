@@ -34,6 +34,7 @@ import qualified Control.Monad.Trans.Writer.Lazy as LW
 import qualified Control.Monad.Trans.Writer.Strict as SW
 import qualified Control.Monad.Trans.RWS.Lazy as L
 import qualified Control.Monad.Trans.RWS.Strict as S
+import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Abort
 import Control.Monad.Trans.Finish
 import qualified Control.Exception as E
@@ -255,6 +256,21 @@ instance (MonadFinally μ, Monoid w) ⇒ MonadFinally (S.RWST r w s μ) where
                   Nothing → S.runRWST (release ar Nothing) r s')
                (\(ar, s', aw) → S.runRWST (S.tell aw >> m ar) r s')
     return ((mr, fr), s''', w `mappend` w')
+
+instance (MonadFinally μ, Monoid w) ⇒ MonadFinally (AccumT w μ) where
+  finally' m f = AccumT $ \w → do
+    ~(~(mr, _), ~(fr, w'')) ← finally' (runAccumT m w) $ \case
+      Just ~(a, w') → runAccumT (f $ Just a) w'
+      Nothing       → runAccumT (f Nothing) w
+    return ((mr, fr), w'')
+  bracket' acquire release m = AccumT $ \w → do
+    ~(~(mr, _), ~(fr, w''')) ←
+      bracket' (runAccumT acquire w)
+               (\ ~(ar, w') → \case
+                  Just ~(mr, w'') → runAccumT (release ar (Just mr)) w''
+                  Nothing → runAccumT (release ar Nothing) w')
+               (\ ~(ar, w') → runAccumT (m ar) w')
+    return ((mr, fr), w''')
 
 -- | Run the provided list of cleanup actions sequentually, attempting to run
 -- the next action even if the previous one did not produce a result.

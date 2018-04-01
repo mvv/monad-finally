@@ -35,10 +35,10 @@ Source-Repository head
 Library
   Build-Depends: base >= 4.4 && < 5
   Build-Depends: transformers        >= 0.2
-               , transformers-compat >= 0.5
+               , transformers-compat >= 0.6.1
                , transformers-base   >= 0.4
                , transformers-abort  >= 0.6
-               , monad-abort-fd      >= 0.6
+               , monad-abort-fd      >= 0.6.2
                , monad-control       >= 1.0
   Hs-Source-Dirs: src
   GHC-Options: -Wall
