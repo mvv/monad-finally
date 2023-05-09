@@ -3,6 +3,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ConstraintKinds #-}
@@ -68,8 +69,10 @@ import Control.Monad.Trans.Control (MonadTransControl(..))
 import Control.Monad.Trans.Abort hiding (abort, recover)
 import Control.Monad.Trans.Finish
 import Control.Monad.Trans.Maybe
+#if !MIN_VERSION_transformers(0,6,0)
 import Control.Monad.Trans.List
 import Control.Monad.Trans.Error
+#endif
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Lazy as L
@@ -229,10 +232,14 @@ instance MonadMask IO where
   withMaskingState MaskedUninterruptible (IO io) = IO $ maskUninterruptible# io
 
 instance MonadMask μ ⇒ MonadMask (MaybeT μ)
+#if !MIN_VERSION_transformers(0,6,0)
 instance MonadMask μ ⇒ MonadMask (ListT μ)
+#endif
 instance MonadMask μ ⇒ MonadMask (AbortT e μ)
 instance MonadMask μ ⇒ MonadMask (FinishT β μ)
+#if !MIN_VERSION_transformers(0,6,0)
 instance (MonadMask μ, Error e) ⇒ MonadMask (ErrorT e μ)
+#endif
 instance MonadMask μ ⇒ MonadMask (ExceptT e μ)
 instance MonadMask μ ⇒ MonadMask (ReaderT r μ)
 instance MonadMask μ ⇒ MonadMask (L.StateT s μ)

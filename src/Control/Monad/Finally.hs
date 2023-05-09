@@ -25,7 +25,9 @@ import Data.Traversable (mapM, forM)
 import Control.Applicative (Applicative(..), (<$>), (<$))
 import Control.Monad (join)
 import Control.Monad.Trans.Maybe
+#if !MIN_VERSION_transformers(0,6,0)
 import Control.Monad.Trans.Error
+#endif
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Lazy as L
@@ -136,6 +138,7 @@ instance MonadFinally μ ⇒ MonadFinally (FinishT β μ) where
                         (fmap join . mapM (runFinishT . m))
     return $ (,) <$> mr <*> rr
 
+#if !MIN_VERSION_transformers(0,6,0)
 instance (MonadFinally μ, Error e) ⇒ MonadFinally (ErrorT e μ) where
   finally' m f = ErrorT $ do
     (mr, fr) ← finally' (runErrorT m) (runErrorT . f . justRight)
@@ -147,6 +150,7 @@ instance (MonadFinally μ, Error e) ⇒ MonadFinally (ErrorT e μ) where
                           Left e → const (return (Left e)))
                         (fmap join . mapM (runErrorT . m))
     return $ (,) <$> mr <*> rr
+#endif
 
 instance MonadFinally μ ⇒ MonadFinally (ExceptT e μ) where
   finally' m f = ExceptT $ do

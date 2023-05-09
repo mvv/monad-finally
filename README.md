@@ -1,7 +1,7 @@
 Monad-Finally
 =============
 
-[![Travis](https://img.shields.io/travis/mvv/monad-finally/master.svg)](https://travis-ci.org/mvv/monad-finally) [![Hackage](https://img.shields.io/hackage/v/monad-finally.svg)](http://hackage.haskell.org/package/monad-finally)
+[![Build](https://github.com/mvv/monad-finally/actions/workflows/ci.yml/badge.svg)](https://github.com/mvv/monad-finally/actions/workflows/ci.yml) [![Hackage](https://img.shields.io/hackage/v/monad-finally.svg)](http://hackage.haskell.org/package/monad-finally)
 
 This package provides a generalized version of `Control.Exception.finally`.
 The cleanup action is run not only on successful termination of the main
